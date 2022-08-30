@@ -45,14 +45,16 @@ def get_config():
     # trainer
     C.trainer = Trainer.get_default_config()
     C.trainer.epochs = 120
-    C.trainer.learning_rate = 1e-3
+    C.trainer.batch_size = 64
+    C.trainer.eval_batch_size = 512
+    C.trainer.learning_rate = 1e-3 * (C.trainer.batch_size/128)
     C.trainer.warmup_epochs = C.trainer.epochs // 10   # % 10 of training is warm-up
     C.trainer.warmup_ratio = 10 #C.trainer.warmup_epochs
     C.trainer.init_lr = C.trainer.learning_rate / C.trainer.warmup_ratio
-    C.trainer.min_lr = 1e-5
+    C.trainer.min_lr = C.trainer.learning_rate / 1e2
     
     C.trainer.weight_decay = 1e-4
-    C.trainer.batch_size = 128
+    
 
     C.trainer.max_iters = int(C.trainer.epochs*(50000/C.trainer.batch_size))   
     C.trainer.n_worker = 2

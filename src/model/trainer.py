@@ -11,7 +11,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.utils.data.dataloader import DataLoader
-from ..utils.utils import CfgNode as CN
+from ..utils import CfgNode as CN
 
 class Trainer:
 

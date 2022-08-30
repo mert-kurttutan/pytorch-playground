@@ -7,14 +7,10 @@ import sys
 import json
 
 import torch
-from torch.utils.data import Dataset
-from torch.utils.data.dataloader import DataLoader
 
-import src.data.dataset as dataset
-import src.utils.utils as utils
-import src.model.resnet as resnet
-from src.model.densenet import DenseNet, BottleneckUnit
-from src.utils.utils import set_seed, setup_logging, CfgNode as CN 
+import src.data as data
+from src.model import DenseNet, BottleneckUnit
+from src.utils import set_seed, setup_logging, CfgNode as CN 
 
 # create a Trainer object
 from src.model.trainer import Trainer
@@ -31,8 +27,8 @@ def get_config():
     C.system.work_dir = './out/densenet_v4'
 
     # data
-    C.train_data = dataset.get_default_config()
-    C.eval_data = dataset.get_default_config()
+    C.train_data = data.get_default_config_cifar10()
+    C.eval_data = data.get_default_config_cifar10()
     C.eval_data.augmentation = []
 
     # model
@@ -86,10 +82,10 @@ if __name__ == '__main__':
     set_seed(config.system.seed)
 
     # construct the training dataset
-    train_dataset = dataset.get_dataset("train", config.train_data)
+    train_dataset = data.get_dataset_cifar10("train", config.train_data)
 
     # construct the test dataset
-    eval_dataset = dataset.get_dataset("test", config.eval_data)
+    eval_dataset = data.get_dataset_cifar10("test", config.eval_data)
 
     # construct the model resnet 50
     model = DenseNet(config.model, BottleneckUnit)

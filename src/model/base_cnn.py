@@ -7,8 +7,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from src.data.dataset import get_default_config
-from ..utils.utils import CfgNode as CN
+from ..utils import CfgNode as CN
 
 
 class BaseCNN(nn.Module):

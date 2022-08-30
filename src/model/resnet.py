@@ -8,7 +8,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from ..utils.utils import CfgNode as CN
+from ..utils import CfgNode as CN
 
 
 class BasicBlock(nn.Module):

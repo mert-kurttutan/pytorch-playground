@@ -7,14 +7,11 @@ import sys
 import json
 
 import torch
-from torch.utils.data import Dataset
-from torch.utils.data.dataloader import DataLoader
 
-import src.data.dataset as dataset
-import src.utils.utils as utils
-import src.model.base_cnn as base_cnn
-from src.model.base_cnn import BaseCNN
-from src.utils.utils import set_seed, setup_logging, CfgNode as CN 
+import src.data as data
+import src.model as model
+from src.model import BaseCNN
+from src.utils import set_seed, setup_logging, CfgNode as CN 
 
 # create a Trainer object
 from src.model.trainer import Trainer
@@ -31,15 +28,15 @@ def get_config():
     C.system.work_dir = './out/basecnn_v9'
 
     # data
-    C.train_data = dataset.get_default_config_cifar10()
-    C.eval_data = dataset.get_default_config_cifar10()
+    C.train_data = data.get_default_config_cifar10()
+    C.eval_data = data.get_default_config_cifar10()
     C.eval_data.augmentation = []
 
     # model
     C.model = BaseCNN.get_default_config()
     C.model.model_type = 'base_cnn'
     C.model.fc_pdrop = 0.2
-    C.model.n_channel = 64
+    C.model.n_channel = 6
     C.model.activation = "gelu"
     C.model.n_class = 10
 
@@ -77,10 +74,10 @@ if __name__ == '__main__':
     set_seed(config.system.seed)
 
     # construct the training dataset
-    train_dataset = dataset.get_dataset_cifar10("train", config.train_data)
+    train_dataset = data.get_dataset_cifar10("train", config.train_data)
 
     # construct the test dataset
-    eval_dataset = dataset.get_dataset_cifar10("test", config.eval_data)
+    eval_dataset = data.get_dataset_cifar10("test", config.eval_data)
 
     # construct the model
     model = BaseCNN(config.model)

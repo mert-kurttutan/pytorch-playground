@@ -1,6 +1,5 @@
 
 
-from cgitb import small
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -8,7 +7,7 @@ import math
 import torch.utils.checkpoint as cp
 
 # local modules
-from ..utils.utils import CfgNode as CN
+from ..utils import CfgNode as CN
 
 
 # __all__ = ['densenet']

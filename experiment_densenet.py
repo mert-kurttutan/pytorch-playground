@@ -13,7 +13,7 @@ from src.model import DenseNet, BottleneckUnit
 from src.utils import set_seed, setup_logging, CfgNode as CN 
 
 # create a Trainer object
-from src.model.trainer import Trainer
+from src.train import Trainer
 
 # -----------------------------------------------------------------------------
 

@@ -4,6 +4,6 @@ This repository is created to function as a general pytorch module to be used fo
 
 ## Explanation
 Source code folder `src` contains several components:
--  data: dataset pipelines, dataset objects
-- model: custom implementation of NN architectures
-- trainer.py: Trainer object, heavily inspired by [minGPT repo](https://github.com/karpathy/minGPT)
+- [data](src/data): dataset pipelines, dataset objects
+- [model](src/model): custom implementation of NN architectures
+- [trainer.py](src/model/trainer.py): Trainer object, heavily inspired by [minGPT repo](https://github.com/karpathy/minGPT)

@@ -59,6 +59,7 @@ def get_config():
     C.trainer.augmentation = ["crop", "horizontal_flip"]
     
     C.trainer.grad_norm_clip = 1
+    C.trainer.cudnn_benchmark = True
 
     return C
 

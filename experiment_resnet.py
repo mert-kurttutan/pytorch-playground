@@ -58,7 +58,6 @@ def get_config():
 
     C.trainer.max_iters = int(C.trainer.epochs*(50000/C.trainer.batch_size))   
     C.trainer.n_worker = 2
-    C.trainer.augmentation = ["crop", "horizontal_flip"]
     
     C.trainer.grad_norm_clip = 1
     C.trainer.cudnn_benchmark = True

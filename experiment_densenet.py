@@ -13,7 +13,7 @@ from src.model import DenseNet, BottleneckUnit
 from src.utils import set_seed, setup_logging, CfgNode as CN 
 
 # create a Trainer object
-from src.train import Trainer
+from src.train import Trainer, loss_fn
 
 # -----------------------------------------------------------------------------
 
@@ -90,7 +90,7 @@ if __name__ == '__main__':
     model = DenseNet(config.model, BottleneckUnit)
 
     # construct the trainer object
-    trainer = Trainer(config.trainer, model, train_dataset, eval_dataset)
+    trainer = Trainer(config.trainer, model, loss_fn, train_dataset, eval_dataset)
 
 
     decay_steps = config.trainer.epochs - config.trainer.warmup_epochs

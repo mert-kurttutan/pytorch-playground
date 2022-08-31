@@ -35,11 +35,13 @@ class Trainer:
 
         return C
 
-    def __init__(self, config, model, train_dataset, eval_dataset=None):
+    def __init__(self, config, model, loss_fn, train_dataset, eval_dataset=None):
         self.config = config
         self.model = model
         self.optimizer = None
         self.train_dataset = train_dataset
+
+        self.loss_fn = loss_fn
 
         self.eval_dataset = eval_dataset
 
@@ -111,7 +113,7 @@ class Trainer:
             # forward the model
             logits = self.model(x)
 
-            running_loss += loss_fn(logits, y).item()
+            running_loss += self.loss_fn(logits, y).item()
 
             running_accuracy += accuracy(logits, y).item()
 
@@ -168,7 +170,7 @@ class Trainer:
             logits = self.model(x)
 
 
-            self.loss = loss_fn(logits, y)
+            self.loss = self.loss_fn(logits, y)
 
             # backprop and update the parameters
             self.model.zero_grad(set_to_none=True)
@@ -207,6 +209,7 @@ def loss_fn(outputs, labels):
     return nn.CrossEntropyLoss()(outputs, labels)
 
 
+
 def loss_fn_kd(outputs, labels, teacher_outputs, config):
     """
     Compute the knowledge-distillation (KD) loss given outputs, labels.
@@ -222,6 +225,16 @@ def loss_fn_kd(outputs, labels, teacher_outputs, config):
 
     return KD_loss
 
+
+def loss_encoder_fine_tune(outputs, labels):
+    """
+    Loss function for encoder fine-tuning
+    Compute cross entropy between first token output and classification label
+
+    """
+
+    # choose the first token output
+    return nn.CrossEntropyLoss()(outputs[:,0,:], labels)
 
 def accuracy(outputs, labels):
     """

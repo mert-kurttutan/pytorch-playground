@@ -14,7 +14,7 @@ from src.model import ResNet, BasicBlock, BottleneckBlock
 from src.utils.utils import set_seed, setup_logging, CfgNode as CN 
 
 # create a Trainer object
-from src.train import Trainer
+from src.train import Trainer, loss_fn
 
 # -----------------------------------------------------------------------------
 
@@ -85,7 +85,7 @@ if __name__ == '__main__':
     model = ResNet(config.model, BottleneckBlock)
 
     # construct the trainer object
-    trainer = Trainer(config.trainer, model, train_dataset, eval_dataset)
+    trainer = Trainer(config.trainer, model, loss_fn, train_dataset, eval_dataset)
 
 
     decay_steps = config.trainer.epochs - config.trainer.warmup_epochs

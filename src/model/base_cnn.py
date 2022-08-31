@@ -104,7 +104,7 @@ class BaseCNN(nn.Module):
         return s
 
 
-    def configure_optimizers(self, train_config):
+    def configure_optimizers_2(self, train_config):
         """
         This long function is unfortunately doing something very simple and is being very defensive:
         We are separating out all parameters of the model into two buckets: those that will experience
@@ -120,7 +120,7 @@ class BaseCNN(nn.Module):
         return optimizer
 
 
-    def configure_optimizers_2(self, train_config):
+    def configure_optimizers(self, train_config):
         """
         This long function is unfortunately doing something very simple and is being very defensive:
         We are separating out all parameters of the model into two buckets: those that will experience

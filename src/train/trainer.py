@@ -35,13 +35,15 @@ class Trainer:
 
         return C
 
-    def __init__(self, config, model, loss_fn, train_dataset, eval_dataset=None):
+    def __init__(self, config, model, loss_fn, accuracy, train_dataset, eval_dataset=None):
         self.config = config
         self.model = model
         self.optimizer = None
         self.train_dataset = train_dataset
 
         self.loss_fn = loss_fn
+
+        self.accuracy = accuracy
 
         self.eval_dataset = eval_dataset
 
@@ -75,7 +77,7 @@ class Trainer:
 
 
         # setup the optimizer
-        self.optimizer = self.model.configure_optimizers_2(self.config)
+        self.optimizer = self.model.configure_optimizers(self.config)
 
     def add_callback(self, onevent: str, callback):
         self.callbacks[onevent].append(callback)
@@ -115,7 +117,7 @@ class Trainer:
 
             running_loss += self.loss_fn(logits, y).item()
 
-            running_accuracy += accuracy(logits, y).item()
+            running_accuracy += self.accuracy(logits, y).item()
 
         if split=="train":
             self.metric["train_loss"].append(running_loss / steps_per_epoch)
@@ -246,3 +248,10 @@ def accuracy(outputs, labels):
     """
     outputs = torch.argmax(outputs, axis=1)
     return torch.mean((outputs == labels).float())
+
+
+def accuracy_encoder_fine_tune(outputs, labels):
+
+    outputs = outputs[:,0,:]
+
+    return accuracy(outputs, labels)

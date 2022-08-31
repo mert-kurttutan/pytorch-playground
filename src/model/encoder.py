@@ -62,17 +62,17 @@ class Block(nn.Module):
 
     def __init__(self, n_head, n_embd, attn_pdrop, resid_pdrop, activation):
         super().__init__()
+        self.activation = activation
         self.ln_1 = nn.LayerNorm(n_embd)
         self.attn = SelfAttention(n_head, n_embd, attn_pdrop, resid_pdrop)
         self.ln_2 = nn.LayerNorm(n_embd)
         self.mlp = nn.ModuleDict(dict(
             c_fc    = nn.Linear(n_embd, 4 * n_embd),
             c_proj  = nn.Linear(4 * n_embd, n_embd),
-            act     = activation,
             dropout = nn.Dropout(resid_pdrop),
         ))
         m = self.mlp
-        self.mlpf = lambda x: m.dropout(m.c_proj(m.act(m.c_fc(x)))) # MLP forward
+        self.mlpf = lambda x: m.dropout(m.c_proj(self.activation(m.c_fc(x)))) # MLP forward
 
     def forward(self, x):
         x = x + self.attn(self.ln_1(x))
@@ -81,6 +81,20 @@ class Block(nn.Module):
 
 class Encoder(nn.Module):
     """ GPT Language Model """
+
+
+    @staticmethod
+    def get_activation(name: str):
+
+        activation_map = {
+            "relu": F.relu,
+            "elu": F.elu,
+            "gelu": F.gelu,
+            "tanh": torch.tanh,
+            "sigmoid": torch.sigmoid,
+        }
+
+        return activation_map[name]
 
     @staticmethod
     def get_default_config():
@@ -105,6 +119,11 @@ class Encoder(nn.Module):
         assert config.block_size is not None
         self.block_size = config.block_size
 
+        self.activation = (
+            F.relu if config.activation is None
+            else self.get_activation(config.activation)
+        )
+
         type_given = config.model_type is not None
         params_given = all([config.n_layer is not None, config.n_head is not None, config.n_embd is not None])
         assert type_given ^ params_given # exactly one of these (XOR)
@@ -116,7 +135,7 @@ class Encoder(nn.Module):
             wte = nn.Linear(config.feature_dim, config.n_embd, bias=False),
             wpe = nn.Embedding(config.block_size, config.n_embd),
             drop = nn.Dropout(config.embd_pdrop),
-            h = nn.ModuleList([Block(config.n_head, config.n_embd, config.attn_pdrop, config.resid_pdrop, config.activation) for _ in range(config.n_layer)]),
+            h = nn.ModuleList([Block(config.n_head, config.n_embd, config.attn_pdrop, config.resid_pdrop, self.activation) for _ in range(config.n_layer)]),
             ln_f = nn.LayerNorm(config.n_embd),
         ))
         self.lm_head = nn.Linear(config.n_embd, config.n_class)
@@ -144,7 +163,7 @@ class Encoder(nn.Module):
 
     def forward(self, input):
         device = input.device
-        b, t = input.size()
+        b, t, c = input.size()
         assert t <= self.block_size, f"Cannot forward sequence of length {t}, block size is only {self.block_size}"
         pos = torch.arange(0, t, dtype=torch.long, device=device).unsqueeze(0) # shape (1, t)
 
@@ -187,6 +206,10 @@ class Encoder(nn.Module):
                     decay.add(fpn)
                 elif pn.endswith('weight') and isinstance(m, blacklist_weight_modules):
                     # weights of blacklist modules will NOT be weight decayed
+                    no_decay.add(fpn)
+
+                # dont decay initial projection layer
+                elif pn.endswith("wpe.weight"):
                     no_decay.add(fpn)
 
         # validate that we considered every parameter

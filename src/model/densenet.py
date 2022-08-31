@@ -224,7 +224,7 @@ class DenseNet(nn.Module):
         out = self.fc(out)
         return out
 
-    def configure_optimizers(self, train_config):
+    def configure_optimizers_2(self, train_config):
 
         optim_groups = [{
                     "params": self.parameters()
@@ -237,7 +237,7 @@ class DenseNet(nn.Module):
 
         return optimizer
 
-    def configure_optimizers_2(self, train_config):
+    def configure_optimizers(self, train_config):
         """
         This long function is unfortunately doing something
         very simple and is being very defensive:

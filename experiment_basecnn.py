@@ -14,7 +14,7 @@ from src.model import BaseCNN
 from src.utils import set_seed, setup_logging, CfgNode as CN 
 
 # create a Trainer object
-from src.train import Trainer, loss_fn
+from src.train import Trainer, loss_fn, accuracy
 
 # -----------------------------------------------------------------------------
 
@@ -82,8 +82,7 @@ if __name__ == '__main__':
     model = BaseCNN(config.model)
 
     # construct the trainer object
-    trainer = Trainer(config.trainer, model, loss_fn, train_dataset, eval_dataset)
-
+    trainer = Trainer(config.trainer, model, loss_fn, accuracy, train_dataset, eval_dataset)
 
     decay_steps = config.trainer.epochs - config.trainer.warmup_epochs
     linear_warm = lambda epoch: ((epoch+1)/config.trainer.warmup_epochs) * config.trainer.warmup_ratio

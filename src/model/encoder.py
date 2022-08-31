@@ -116,7 +116,7 @@ class Encoder(nn.Module):
             wte = nn.Linear(config.feature_dim, config.n_embd, bias=False),
             wpe = nn.Embedding(config.block_size, config.n_embd),
             drop = nn.Dropout(config.embd_pdrop),
-            h = nn.ModuleList([Block(config) for _ in range(config.n_layer)]),
+            h = nn.ModuleList([Block(config.n_head, config.n_embd, config.attn_pdrop, config.resid_pdrop, config.activation) for _ in range(config.n_layer)]),
             ln_f = nn.LayerNorm(config.n_embd),
         ))
         self.lm_head = nn.Linear(config.n_embd, config.n_class)

@@ -12,23 +12,20 @@ from ..utils import CfgNode as CN
 
 class BaseCNN(nn.Module):
     """
-    This is the standard way to define your own network in PyTorch. You typically choose the components
-    (e.g. LSTMs, linear layers etc.) of your network in the __init__ function. You then apply these layers
-    on the input step-by-step in the forward function. You can use torch.nn.functional to apply functions
-    such as F.relu, F.sigmoid, F.softmax, F.max_pool2d. Be careful to ensure your dimensions are correct after each
-    step. You are encouraged to have a look at the network in pytorch/nlp/model/net.py to get a better sense of how
-    you can go about defining your own network.
-    The documentation for all the various components available o you is here: http://pytorch.org/docs/master/nn.html
+    Standard Baseline CNN.
+    Basic unit is conv->BN->pool->activation
     """
 
     @staticmethod
     def get_activation(name: str):
 
-        activation_map = {"relu": F.relu,
-                        "elu": F.elu,
-                        "gelu": F.gelu,
-                        "tanh": torch.tanh,
-                        "sigmoid": torch.sigmoid}
+        activation_map = {
+            "relu": F.relu,
+            "elu": F.elu,
+            "gelu": F.gelu,
+            "tanh": torch.tanh,
+            "sigmoid": torch.sigmoid
+        }
 
         return activation_map[name]
 
@@ -103,29 +100,13 @@ class BaseCNN(nn.Module):
 
         return s
 
+    def _get_parameter_config(self):
 
-    def configure_optimizers_2(self, train_config):
         """
         This long function is unfortunately doing something very simple and is being very defensive:
         We are separating out all parameters of the model into two buckets: those that will experience
         weight decay for regularization and those that won't (biases, and layernorm/embedding weights).
-        We are then returning the PyTorch optimizer object.
-        """
-
-        optim_groups = [{
-                    "params": self.parameters()
-            }]
-        optimizer = torch.optim.Adam(optim_groups, lr=train_config.learning_rate, betas=train_config.betas)
-
-        return optimizer
-
-
-    def configure_optimizers(self, train_config):
-        """
-        This long function is unfortunately doing something very simple and is being very defensive:
-        We are separating out all parameters of the model into two buckets: those that will experience
-        weight decay for regularization and those that won't (biases, and layernorm/embedding weights).
-        We are then returning the PyTorch optimizer object.
+        Then returns buckets for decay and no-decay parameters
         """
 
         # separate out all parameters to those that will and won't experience regularizing weight decay
@@ -157,10 +138,34 @@ class BaseCNN(nn.Module):
         assert len(param_dict.keys() - union_params) == 0, "parameters %s were not separated into either decay/no_decay set!" \
                                                     % (str(param_dict.keys() - union_params), )
 
+        return decay, no_decay, param_dict
+
+    def _get_optim(optim_groups, train_config):
+
+        if train_config.optim == "adamw":
+            optimizer = torch.optim.AdamW(optim_groups, lr=train_config.lr, betas=train_config.betas)
+        
+        elif train_config.optim == "sgd":
+            optimizer = torch.optim.SGD(optim_groups, lr=train_config.lr, momentum=train_config.momentum)
+
+        else:
+            raise ValueError(f"The optimizer for {train_config.optim} is not implemented")
+
+
+        return optimizer
+        
+
+    def configure_optimizers(self, train_config):
+
+        decay, no_decay, param_dict = self._get_parameter_config()
+
         # create the pytorch optimizer object
         optim_groups = [
             {"params": [param_dict[pn] for pn in sorted(list(decay))], "weight_decay": train_config.weight_decay},
             {"params": [param_dict[pn] for pn in sorted(list(no_decay))], "weight_decay": 0.0},
         ]
-        optimizer = torch.optim.AdamW(optim_groups, lr=train_config.learning_rate, betas=train_config.betas)
+
+        optimizer = BaseCNN._get_optim(optim_groups, train_config)
+
+        
         return optimizer

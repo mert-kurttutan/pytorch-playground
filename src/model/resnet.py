@@ -185,44 +185,26 @@ class ResNet(nn.Module):
         out = self.linear(out)
         return out
 
-    def configure_optimizers_2(self, train_config):
+    def _get_parameter_config(self):
 
-        optim_groups = [{
-                    "params": self.parameters()
-            }]
-
-        optimizer = torch.optim.Adam(
-            optim_groups,
-            lr=train_config.learning_rate, betas=train_config.betas
-        )
-
-        return optimizer
-
-    def configure_optimizers(self, train_config):
         """
-        This long function is unfortunately doing something
-        very simple and is being very defensive:
-        We are separating out all parameters of the model
-        into two buckets: those that will experience
-        weight decay for regularization and those
-        that won't (biases, and layernorm/embedding weights).
-        We are then returning the PyTorch optimizer object.
+        This long function is unfortunately doing something very simple and is being very defensive:
+        We are separating out all parameters of the model into two buckets: those that will experience
+        weight decay for regularization and those that won't (biases, and layernorm/embedding weights).
+        Then returns buckets for decay and no-decay parameters
         """
 
-        # separate out all parameters to those that will and
-        # won't experience regularizing weight decay
+        # separate out all parameters to those that will and won't experience regularizing weight decay
         decay = set()
         no_decay = set()
         whitelist_weight_modules = (torch.nn.Linear, torch.nn.Conv2d)
         blacklist_weight_modules = (torch.nn.BatchNorm2d, torch.nn.BatchNorm1d)
         for mn, m in self.named_modules():
             for pn, p in m.named_parameters():
-                fpn = f"{mn}.{pn}" if mn else pn  # full param name
-                # random note: because named_modules
-                # and named_parameters are recursive
-                # we will see the same tensors p many many times.
-                # but doing it this way allows us to know
-                # which parent module any tensor p belongs to...
+                fpn = '%s.%s' % (mn, pn) if mn else pn # full param name
+                # random note: because named_modules and named_parameters are recursive
+                # we will see the same tensors p many many times. but doing it this way
+                # allows us to know which parent module any tensor p belongs to...
                 if pn.endswith('bias'):
                     # all biases will not be decayed
                     no_decay.add(fpn)
@@ -237,39 +219,41 @@ class ResNet(nn.Module):
         param_dict = {pn: p for pn, p in self.named_parameters()}
         inter_params = decay & no_decay
         union_params = decay | no_decay
+        assert len(inter_params) == 0, "parameters %s made it into both decay/no_decay sets!" % (str(inter_params), )
+        assert len(param_dict.keys() - union_params) == 0, "parameters %s were not separated into either decay/no_decay set!" \
+                                                    % (str(param_dict.keys() - union_params), )
 
-        assert (
-            len(inter_params) == 0
-        ), (
-            f"parameters {str(inter_params)} made it ",
-            "into both decay/no_decay sets!"
-        )
+        return decay, no_decay, param_dict
 
-        assert (
-            len(param_dict.keys() - union_params) == 0
-        ), (
-            f"parameters {str(param_dict.keys() - union_params)} ",
-            "were not separated into either decay/no_decay set!"
+    def _get_optim(optim_groups, train_config):
 
-        )
+        if train_config.optim == "adamw":
+            optimizer = torch.optim.AdamW(optim_groups, lr=train_config.lr, betas=train_config.betas)
+        
+        elif train_config.optim == "sgd":
+            optimizer = torch.optim.SGD(optim_groups, lr=train_config.lr, momentum=train_config.momentum)
+
+        else:
+            raise ValueError(f"The optimizer for {train_config.optim} is not implemented")
+
+
+        return optimizer
+        
+
+    def configure_optimizers(self, train_config):
+
+        decay, no_decay, param_dict = self._get_parameter_config()
 
         # create the pytorch optimizer object
         optim_groups = [
-            {
-                "params": [param_dict[pn] for pn in sorted(list(decay))],
-                "weight_decay": train_config.weight_decay
-            },
-            {
-                "params": [param_dict[pn] for pn in sorted(list(no_decay))],
-                "weight_decay": 0.0
-            },
+            {"params": [param_dict[pn] for pn in sorted(list(decay))], "weight_decay": train_config.weight_decay},
+            {"params": [param_dict[pn] for pn in sorted(list(no_decay))], "weight_decay": 0.0},
         ]
-        optimizer = torch.optim.AdamW(
-            optim_groups,
-            lr=train_config.learning_rate, betas=train_config.betas
-        )
-        return optimizer
 
+        optimizer = ResNet._get_optim(optim_groups, train_config)
+
+        
+        return optimizer
 
 def ResNet18():
     default_config = ResNet.get_default_config()

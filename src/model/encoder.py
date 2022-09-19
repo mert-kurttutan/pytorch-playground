@@ -179,19 +179,20 @@ class Encoder(nn.Module):
 
         return logits
 
-    def configure_optimizers(self, train_config):
+    def _get_parameter_config(self):
+
         """
         This long function is unfortunately doing something very simple and is being very defensive:
         We are separating out all parameters of the model into two buckets: those that will experience
         weight decay for regularization and those that won't (biases, and layernorm/embedding weights).
-        We are then returning the PyTorch optimizer object.
+        Then returns buckets for decay and no-decay parameters
         """
 
         # separate out all parameters to those that will and won't experience regularizing weight decay
         decay = set()
         no_decay = set()
-        whitelist_weight_modules = (torch.nn.Linear, )
-        blacklist_weight_modules = (torch.nn.LayerNorm)
+        whitelist_weight_modules = (torch.nn.Linear, torch.nn.Conv2d)
+        blacklist_weight_modules = (torch.nn.BatchNorm2d, torch.nn.BatchNorm1d)
         for mn, m in self.named_modules():
             for pn, p in m.named_parameters():
                 fpn = '%s.%s' % (mn, pn) if mn else pn # full param name
@@ -208,10 +209,6 @@ class Encoder(nn.Module):
                     # weights of blacklist modules will NOT be weight decayed
                     no_decay.add(fpn)
 
-                # dont decay initial projection layer
-                elif pn.endswith("wpe.weight"):
-                    no_decay.add(fpn)
-
         # validate that we considered every parameter
         param_dict = {pn: p for pn, p in self.named_parameters()}
         inter_params = decay & no_decay
@@ -220,10 +217,34 @@ class Encoder(nn.Module):
         assert len(param_dict.keys() - union_params) == 0, "parameters %s were not separated into either decay/no_decay set!" \
                                                     % (str(param_dict.keys() - union_params), )
 
+        return decay, no_decay, param_dict
+
+    def _get_optim(optim_groups, train_config):
+
+        if train_config.optim == "adamw":
+            optimizer = torch.optim.AdamW(optim_groups, lr=train_config.lr, betas=train_config.betas)
+        
+        elif train_config.optim == "sgd":
+            optimizer = torch.optim.SGD(optim_groups, lr=train_config.lr, momentum=train_config.momentum)
+
+        else:
+            raise ValueError(f"The optimizer for {train_config.optim} is not implemented")
+
+
+        return optimizer
+        
+
+    def configure_optimizers(self, train_config):
+
+        decay, no_decay, param_dict = self._get_parameter_config()
+
         # create the pytorch optimizer object
         optim_groups = [
             {"params": [param_dict[pn] for pn in sorted(list(decay))], "weight_decay": train_config.weight_decay},
             {"params": [param_dict[pn] for pn in sorted(list(no_decay))], "weight_decay": 0.0},
         ]
-        optimizer = torch.optim.AdamW(optim_groups, lr=train_config.learning_rate, betas=train_config.betas)
+
+        optimizer = Encoder._get_optim(optim_groups, train_config)
+
+        
         return optimizer

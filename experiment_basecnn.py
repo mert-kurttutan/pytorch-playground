@@ -36,7 +36,7 @@ def get_config():
     C.model = BaseCNN.get_default_config()
     C.model.model_type = 'base_cnn'
     C.model.fc_pdrop = 0.2
-    C.model.n_channel = 6
+    C.model.n_channel = 64
     C.model.activation = "gelu"
     C.model.n_class = 10
 

@@ -45,7 +45,7 @@ def get_config():
     C.trainer.epochs = 120
     C.trainer.batch_size = 32
     C.trainer.eval_batch_size = 1024
-    C.trainer.lr = 1e-3 * (C.trainer.batch_size/128)
+    C.trainer.lr = 1e-3 * (C.trainer.batch_size/32)
     C.trainer.warmup_epochs = C.trainer.epochs // 10   # % 10 of training is warm-up
     C.trainer.warmup_ratio = 10 #C.trainer.warmup_epochs
     C.trainer.init_lr = C.trainer.lr / C.trainer.warmup_ratio

@@ -55,8 +55,8 @@ def get_config():
     C.trainer.lr = 1e-3 * (C.trainer.batch_size/128)
     C.trainer.warmup_epochs = C.trainer.epochs // 10   # % 10 of training is warm-up
     C.trainer.warmup_ratio = 10 #C.trainer.warmup_epochs
-    C.trainer.init_lr = C.trainer.learning_rate / C.trainer.warmup_ratio
-    C.trainer.min_lr = C.trainer.learning_rate / 1e2
+    C.trainer.init_lr = C.trainer.lr / C.trainer.warmup_ratio
+    C.trainer.min_lr = C.trainer.lr / 1e2
     C.trainer.optim = "sgd"
     
     C.trainer.momentum = 0.9
